@@ -1,41 +1,66 @@
 import http from "http";
-import path from "path";
+import { MongoClient } from "mongodb";
 import socketIo from "socket.io";
 
-import { prepareData, savingDataToFile } from "./lib";
+import { createValidatedCollection } from "./lib/mongoHandlers";
 
-import ChatState from "./state/ChatState";
+import { setSignInListener } from "./listeners/signIn.listener";
+import { setSignUpListener } from "./listeners/signUp.listener";
+import { setSendMessageListener } from "./listeners/sendMessage.listener";
+import { setConnectToChatListener } from "./listeners/connectToChat.listener";
 
-import { setLoginListener } from "./listeners/login.listener";
-import { setNewMessageListener } from "./listeners/newMessage.listener";
-import { setUserDisconnectListener } from "./listeners/userDisconnect.listener";
-
-const [appendDataToFile, writeDataToFile, setDataToState] = savingDataToFile();
-const messagesFilePath = path.resolve(__dirname, "data", "messages.txt");
-const usersFilePath = path.resolve(__dirname, "data", "users.txt");
-
-const server = http.createServer().listen(3333, () => {
-  setDataToState(messagesFilePath, (messages) =>
-    ChatState.setMessages(messages)
-  );
-  setDataToState(usersFilePath, (users) => ChatState.setUsers(users));
-
-  setInterval(() => {
-    const data = prepareData(ChatState.newMessages);
-
-    if (ChatState.newMessages.length === 0) return;
-
-    appendDataToFile(messagesFilePath, data.join(""));
-    ChatState.newMessages = [];
-  }, 30000);
-});
-
+const server = http.createServer().listen(3333);
 const io = socketIo(server);
 
-io.on("connection", (socket) => {
-  setLoginListener(socket, (data) => writeDataToFile(usersFilePath, data));
-  setNewMessageListener(socket);
-  setUserDisconnectListener(socket, (data) =>
-    writeDataToFile(usersFilePath, data)
-  );
+const url = "mongodb://localhost:27017";
+const dbName = "chat";
+const client = new MongoClient(url, { useUnifiedTopology: true });
+
+client.connect((error) => {
+  if (error) {
+    console.error(error);
+    return;
+  }
+  console.log("Connected successfully to server");
+
+  const db = client.db(dbName);
+
+  createValidatedCollection({
+    db,
+    collectionName: "users",
+    options: {
+      validator: {
+        $or: [
+          { id: { $type: "string" } },
+          { login: { $type: "string" } },
+          { password: { $type: "string" } },
+        ],
+      },
+    },
+  });
+  createValidatedCollection({
+    db,
+    collectionName: "messages",
+    options: {
+      validator: {
+        $or: [
+          { id: { $type: "string" } },
+          { text: { $type: "string" } },
+          { date: { $type: "string" } },
+          { authorId: { $type: "string" } },
+        ],
+      },
+    },
+  });
+
+  io.on("connection", (socket) => {
+    setSignUpListener(socket, db.collection("users"));
+    setSignInListener(socket, db.collection("users"));
+    setSendMessageListener(socket, db.collection("messages"));
+    setConnectToChatListener(
+      socket,
+      db.collection("users"),
+      db.collection("messages")
+    );
+  });
 });
