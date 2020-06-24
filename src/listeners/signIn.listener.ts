@@ -21,6 +21,7 @@ export function setSignInListener(socket: Socket, collection: Collection) {
             socket.emit("sign-in-failed", {
               message: "This user was not created",
             });
+            return;
           }
 
           socket.emit("sign-in-success", {
@@ -29,7 +30,7 @@ export function setSignInListener(socket: Socket, collection: Collection) {
           });
           socket.broadcast.emit("user-joined", {
             message: "User connected to chat",
-            user: result,
+            user: { _id: result._id, login: result.login },
           });
         }
       );

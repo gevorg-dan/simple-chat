@@ -22,6 +22,7 @@ export function setSignUpListener(socket: Socket, collection: Collection) {
           socket.emit("sign-up-failed", {
             message: "This login is already token",
           });
+          return;
         }
 
         collection.insertOne(
@@ -35,7 +36,7 @@ export function setSignUpListener(socket: Socket, collection: Collection) {
 
             socket.emit("sign-up-success", {
               message: "User created",
-              newUser: result,
+              newUser: result.ops[0],
             });
           }
         );

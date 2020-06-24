@@ -6,21 +6,23 @@ export function setConnectToChatListener(
   usersCollection: Collection,
   messagesCollection: Collection
 ) {
-  socket.on("connect-to-chat", async () => {
+  socket.on("connect-to-chat", () => {
     const response = {
       message: "connection successful",
       data: { messages: [] as any, users: [] as any },
     };
 
-    await Promise.all([
-      usersCollection.find({}).toArray((error, result) => {
-        if (error) {
-          console.error(error);
-          socket.emit("error", { message: error.message });
-          return;
-        }
-        response.data.users = result;
-      }),
+    usersCollection.find({}).toArray((error, result) => {
+      if (error) {
+        console.error(error);
+        socket.emit("error", { message: error.message });
+        return;
+      }
+      response.data.users = result.map((user) => ({
+        _id: user._id,
+        login: user.login,
+      }));
+
       messagesCollection.find({}).toArray((error, result) => {
         if (error) {
           console.error(error);
@@ -28,9 +30,8 @@ export function setConnectToChatListener(
           return;
         }
         response.data.messages = result;
-      }),
-    ]);
-
-    socket.emit("successful-chat-connection", response);
+        socket.emit("successful-chat-connection", response);
+      });
+    });
   });
 }
