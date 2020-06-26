@@ -1,34 +1,31 @@
 import { Socket } from "socket.io";
-import { Collection } from "mongodb";
+import { MongoRepository } from "typeorm";
 
-type MessageDataType = {
-  text: string;
-  date: string;
-  authorId: string;
-};
+import { Message } from "../entity/Message";
 
-export function setSendMessageListener(socket: Socket, collection: Collection) {
-  socket.on("send-message", (data: MessageDataType) => {
+export function setSendMessageListener(
+  socket: Socket,
+  messageRepository: MongoRepository<Message>
+) {
+  socket.on("send-message", async (data: Message) => {
     try {
-      const { text, date, authorId } = data;
+      const { text, date, author, reply } = data;
       if (!socket.request.session.login) return;
-      collection.insertOne({ text, date, authorId }, (error, result) => {
-        if (error) {
-          console.error(error);
-          socket.emit("send-message-failed", {
-            message: "failed to send message",
-          });
-          return;
-        }
 
-        const response = {
-          message: "message sent",
-          data: { message: result.ops[0] },
-        };
+      const newMessage = new Message();
+      newMessage.text = text;
+      newMessage.date = date;
+      newMessage.author = author;
+      newMessage.reply = reply;
+      await messageRepository.save(newMessage);
 
-        socket.emit("send-message-success", response);
-        socket.broadcast.emit("send-message-success", response);
-      });
+      const response = {
+        message: "message sent",
+        data: { message: newMessage },
+      };
+
+      socket.emit("send-message-success", response);
+      socket.broadcast.emit("send-message-success", response);
     } catch (e) {
       console.error(e);
     }

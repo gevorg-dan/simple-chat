@@ -1,38 +1,37 @@
 import { Socket } from "socket.io";
-import { Collection } from "mongodb";
+import { MongoRepository } from "typeorm";
+
+import { User } from "../entity/User";
 
 export function authMiddleware(
   socket: Socket,
   sessionStore: any,
-  collection: Collection
+  userRepository: MongoRepository<User>
 ) {
-  sessionStore.get("login", (error: Error, session: any) => {
+  sessionStore.get("login", async(error: Error, session: any) => {
     if (error) {
       console.error(error);
       return;
     }
     if (!session) return;
+
     const login = Object.values(session).join("");
     if (login.length === 0) return;
 
-    socket.request.session.login = 123;
-    collection.findOne({ login }, (error, result) => {
-      if (error) {
-        console.error(error);
-        return;
-      }
+    socket.request.session.login = login;
+    const user = await userRepository.findOne({ login });
 
-      if (!result) return;
+    if (!user) return;
 
-      const response = { _id: result._id, login: result.login };
-      socket.emit("sign-in-success", {
-        message: "You are logged in",
-        user: response,
-      });
-      socket.broadcast.emit("user-joined", {
-        message: "User connected to chat",
-        user: response,
-      });
+    const response = { id: user.id, login: user.login };
+    socket.emit("sign-in-success", {
+      message: "You are logged in",
+      user: response,
     });
+    socket.broadcast.emit("user-joined", {
+      message: "User connected to chat",
+      user: response,
+    });
+
   });
 }

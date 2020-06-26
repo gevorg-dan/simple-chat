@@ -1,44 +1,39 @@
 import { Socket } from "socket.io";
-import { Collection } from "mongodb";
-
-import { SignDataType } from "./signUp.listener";
+import { MongoRepository } from "typeorm";
 
 import { sessionStore } from "../index";
 
-export function setSignInListener(socket: Socket, collection: Collection) {
-  socket.on("sign-in", (data: SignDataType) => {
+import { User } from "../entity/User";
+
+export function setSignInListener(
+  socket: Socket,
+  userRepository: MongoRepository<User>
+) {
+  socket.on("sign-in", async (data: User) => {
     try {
-      const { login: dataLogin, password: dataPassword } = data;
+      const { login, password } = data;
 
-      collection.findOne(
-        { login: dataLogin, password: dataPassword },
-        (error, result) => {
-          if (error) {
-            console.error(error);
-            return;
-          }
+      const user = await userRepository.findOne({ login });
 
-          if (!result) {
-            socket.emit("sign-in-failed", {
-              message: "This user was not created",
-            });
-            return;
-          }
+      if (!user || user.password !== password) {
+        socket.emit("sign-in-failed", {
+          message: "This user was not created or pass is invalid",
+        });
+        return;
+      }
 
-          socket.request.session.login = dataLogin;
-          sessionStore.set("login", dataLogin);
+      socket.request.session.login = login;
+      sessionStore.set("login", login);
 
-          const response = { _id: result._id, login: result.login };
-          socket.emit("sign-in-success", {
-            message: "You are logged in",
-            user: response,
-          });
-          socket.broadcast.emit("user-joined", {
-            message: "User connected to chat",
-            user: response,
-          });
-        }
-      );
+      const response = { id: user.id, login: user.login };
+      socket.emit("sign-in-success", {
+        message: "You are logged in",
+        user: response,
+      });
+      socket.broadcast.emit("user-joined", {
+        message: "User connected to chat",
+        user: response,
+      });
     } catch (error) {
       console.error(error);
       socket.emit("error", { message: error.message });
