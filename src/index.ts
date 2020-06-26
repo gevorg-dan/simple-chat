@@ -4,15 +4,15 @@ import express from "express";
 import session from "express-session";
 const MongoDBStore = require("connect-mongodb-session")(session);
 
-import { createValidatedCollection } from "./lib/mongoHandlers";
-
 import { setSignInListener } from "./listeners/signIn.listener";
 import { setSignUpListener } from "./listeners/signUp.listener";
 import { setSendMessageListener } from "./listeners/sendMessage.listener";
 import { setConnectToChatListener } from "./listeners/connectToChat.listener";
 import { setLogoutListener } from "./listeners/logout.listener";
+
 import { authMiddleware } from "./middleware/auth.middleware";
 import { sessionMiddleware } from "./middleware/session.middleware";
+
 import { createUsersCollection } from "./collections/users.collection";
 import { createMessagesCollection } from "./collections/messages.collection";
 
