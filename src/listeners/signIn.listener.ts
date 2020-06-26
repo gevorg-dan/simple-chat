@@ -3,6 +3,8 @@ import { Collection } from "mongodb";
 
 import { SignDataType } from "./signUp.listener";
 
+import { sessionStore } from "../index";
+
 export function setSignInListener(socket: Socket, collection: Collection) {
   socket.on("sign-in", (data: SignDataType) => {
     try {
@@ -13,7 +15,6 @@ export function setSignInListener(socket: Socket, collection: Collection) {
         (error, result) => {
           if (error) {
             console.error(error);
-            socket.emit("error", { message: error.message });
             return;
           }
 
@@ -24,13 +25,17 @@ export function setSignInListener(socket: Socket, collection: Collection) {
             return;
           }
 
+          socket.request.session.login = dataLogin;
+          sessionStore.set("login", dataLogin);
+
+          const response = { _id: result._id, login: result.login };
           socket.emit("sign-in-success", {
             message: "You are logged in",
-            user: result,
+            user: response,
           });
           socket.broadcast.emit("user-joined", {
             message: "User connected to chat",
-            user: { _id: result._id, login: result.login },
+            user: response,
           });
         }
       );

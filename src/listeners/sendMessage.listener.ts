@@ -11,7 +11,7 @@ export function setSendMessageListener(socket: Socket, collection: Collection) {
   socket.on("send-message", (data: MessageDataType) => {
     try {
       const { text, date, authorId } = data;
-
+      if (!socket.request.session.login) return;
       collection.insertOne({ text, date, authorId }, (error, result) => {
         if (error) {
           console.error(error);
@@ -25,7 +25,6 @@ export function setSendMessageListener(socket: Socket, collection: Collection) {
           message: "message sent",
           data: { message: result.ops[0] },
         };
-        console.log(result.ops);
 
         socket.emit("send-message-success", response);
         socket.broadcast.emit("send-message-success", response);

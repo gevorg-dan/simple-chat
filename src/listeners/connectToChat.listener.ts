@@ -11,6 +11,7 @@ export function setConnectToChatListener(
       message: "connection successful",
       data: { messages: [] as any, users: [] as any },
     };
+    if (!socket.request.session.login) return;
 
     usersCollection.find({}).toArray((error, result) => {
       if (error) {
