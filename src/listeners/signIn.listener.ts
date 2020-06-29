@@ -1,17 +1,15 @@
 import { Socket } from "socket.io";
-import { MongoRepository } from "typeorm";
+import { getMongoRepository } from "typeorm";
 
 import { sessionStore } from "../index";
 
 import { User } from "../entity/User";
 
-export function setSignInListener(
-  socket: Socket,
-  userRepository: MongoRepository<User>
-) {
+export function setSignInListener(socket: Socket) {
   socket.on("sign-in", async (data: User) => {
     try {
       const { login, password } = data;
+      const userRepository = getMongoRepository(User);
 
       const user = await userRepository.findOne({ login });
 

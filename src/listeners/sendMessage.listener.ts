@@ -1,21 +1,22 @@
 import { Socket } from "socket.io";
-import { MongoRepository } from "typeorm";
+import { getMongoRepository } from "typeorm";
 
 import { Message } from "../entity/Message";
+import { User } from "../entity/User";
 
-export function setSendMessageListener(
-  socket: Socket,
-  messageRepository: MongoRepository<Message>
-) {
-  socket.on("send-message", async (data: Message) => {
+export function setSendMessageListener(socket: Socket) {
+  socket.on("send-message", async (data: any) => {
     try {
       const { text, date, author, reply } = data;
-      if (!socket.request.session.login) return;
+      const messageRepository = getMongoRepository(Message);
+      const userRepository = getMongoRepository(User);
+
+      const user = await userRepository.findOne(author);
 
       const newMessage = new Message();
       newMessage.text = text;
       newMessage.date = date;
-      newMessage.author = author;
+      newMessage.author = user.id.toString();
       newMessage.reply = reply;
       await messageRepository.save(newMessage);
 

@@ -27,37 +27,23 @@ export const sessionStore = new MongoDBStore({
 const server = app.listen(3333, () => console.log("Server run"));
 const io = socketIo(server);
 
-createConnection({
-  type: "mongodb",
-  host: "localhost",
-  port: 27017,
-  database: "chat",
-  entities: [User, Message],
-  synchronize: true,
-  logging: false,
-  useUnifiedTopology: true,
-})
+createConnection()
   .then(async (connection) => {
     console.log("Connecting to database");
 
-    const userRepository = connection.getMongoRepository(User);
-    const messageRepository = connection.getMongoRepository(Message);
+    const getRepository = connection.getMongoRepository;
 
     io.use((socket, next) => {
       sessionMiddleware(socket.request, {} as any, next);
     });
     io.on("connection", (socket) => {
-      authMiddleware(socket, sessionStore, userRepository);
+      authMiddleware(socket, sessionStore);
 
       setLogoutListener(socket);
-      setSignUpListener(socket, userRepository);
-      setSignInListener(socket, userRepository);
-      setSendMessageListener(socket, messageRepository);
-      setConnectToChatListener(
-        socket,
-        userRepository,
-        messageRepository
-      );
+      setSignUpListener(socket);
+      setSignInListener(socket);
+      setSendMessageListener(socket);
+      setConnectToChatListener(socket);
     });
   })
   .catch((error) => console.error(error));

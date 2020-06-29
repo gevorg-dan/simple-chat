@@ -12,10 +12,4 @@ export class User {
 
   @Column()
   password: string;
-
-  @OneToMany((type) => Message, (message) => message.author, {
-    nullable: true,
-    cascade: true,
-  })
-  messages: Message[];
 }

@@ -1,22 +1,18 @@
 import { Socket } from "socket.io";
-import { MongoRepository } from "typeorm";
+import { getMongoRepository } from "typeorm";
 
 import { Message } from "../entity/Message";
 import { User } from "../entity/User";
 
-export function setConnectToChatListener(
-  socket: Socket,
-  userRepository: MongoRepository<User>,
-  messageRepository: MongoRepository<Message>
-) {
+export function setConnectToChatListener(socket: Socket) {
   socket.on("connect-to-chat", async () => {
-    if (!socket.request.session.login) return;
+    const userRepository = getMongoRepository(User);
+    const messageRepository = getMongoRepository(Message);
 
-    const users = await userRepository.find({ select: ["id", "login"] });
-    const messages = await messageRepository.find({
-      relations: ["author"],
+    const users = await userRepository.find({
+      select: ["id", "login"],
     });
-    console.log(messages);
+    const messages = await messageRepository.find({});
 
     socket.emit("successful-chat-connection", {
       message: "connection successful",

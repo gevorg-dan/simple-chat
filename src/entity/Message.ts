@@ -13,8 +13,8 @@ export class Message {
   @Column()
   date: string;
 
-  @ManyToOne((type) => User, (user) => user.messages)
-  author: User;
+  @Column()
+  author: string;
 
   @Column({ nullable: true, default: null })
   reply: Message;

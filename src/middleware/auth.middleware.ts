@@ -1,14 +1,13 @@
 import { Socket } from "socket.io";
-import { MongoRepository } from "typeorm";
+import {  getMongoRepository } from "typeorm";
 
 import { User } from "../entity/User";
 
 export function authMiddleware(
   socket: Socket,
-  sessionStore: any,
-  userRepository: MongoRepository<User>
+  sessionStore: any
 ) {
-  sessionStore.get("login", async(error: Error, session: any) => {
+  sessionStore.get("login", async (error: Error, session: any) => {
     if (error) {
       console.error(error);
       return;
@@ -19,7 +18,7 @@ export function authMiddleware(
     if (login.length === 0) return;
 
     socket.request.session.login = login;
-    const user = await userRepository.findOne({ login });
+    const user = await getMongoRepository(User).findOne({ login });
 
     if (!user) return;
 
@@ -32,6 +31,5 @@ export function authMiddleware(
       message: "User connected to chat",
       user: response,
     });
-
   });
 }
