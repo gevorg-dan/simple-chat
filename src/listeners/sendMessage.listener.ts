@@ -1,5 +1,5 @@
 import { Socket } from "socket.io";
-import { getMongoRepository } from "typeorm";
+import { getMongoRepository, ObjectID } from "typeorm";
 
 import { Message } from "../entity/Message";
 import { User } from "../entity/User";
@@ -11,7 +11,7 @@ export function setSendMessageListener(socket: Socket) {
       const messageRepository = getMongoRepository(Message);
       const userRepository = getMongoRepository(User);
 
-      const user = await userRepository.findOne(author);
+      const user = await userRepository.findOne({ id: new ObjectID(author) });
 
       const newMessage = new Message();
       newMessage.text = text;

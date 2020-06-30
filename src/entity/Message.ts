@@ -1,6 +1,4 @@
-import { Entity, Column, ObjectIdColumn, ObjectID, ManyToOne } from "typeorm";
-
-import { User } from "./User";
+import { Entity, Column, ObjectIdColumn, ObjectID } from "typeorm";
 
 @Entity()
 export class Message {

@@ -31,8 +31,6 @@ createConnection()
   .then(async (connection) => {
     console.log("Connecting to database");
 
-    const getRepository = connection.getMongoRepository;
-
     io.use((socket, next) => {
       sessionMiddleware(socket.request, {} as any, next);
     });
